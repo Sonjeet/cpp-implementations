@@ -1,0 +1,11 @@
+# Project style. clang-format uses the nearest .clang-format when walking up
+# from the file being formatted and does not merge with files further up, so
+# this must be self-contained.
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+ColumnLimit: 100
+# `T* p` / `T& r` instead of LLVM's `T *p` / `T &r` (references follow pointers).
+PointerAlignment: Left
