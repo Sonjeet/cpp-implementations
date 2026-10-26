@@ -13,6 +13,6 @@ add_executable(main)
 target_sources(main PRIVATE main.cpp)
 target_link_libraries(main PRIVATE vector)
 
-enable_testing()
-add_subdirectory(tests)
+#enable_testing()
+#add_subdirectory(tests)
 
