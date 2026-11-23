@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 #include <cstddef>
 #include <format>
@@ -26,7 +28,8 @@ public:
     explicit vector(std::size_t capacity) : capacity_(capacity) {}
 
     /**
-     * @brief Constructs and prefills vector with a value for count number of times
+     * @brief Constructs and prefills vector with a value for count number of
+     * times
      * @param count
      * @param value
      * @throws bad_alloc or any exception from T's constructor
@@ -44,7 +47,8 @@ public:
      * @throws bad_alloc or any exception from T's constructor
      * */
     vector(const std::initializer_list<T>& init)
-        : size_(init.size()), capacity_(init.size()), data_(allocate(capacity_)) {
+        : size_(init.size()), capacity_(init.size()),
+          data_(allocate(capacity_)) {
         auto it = init.begin();
         for (std::size_t i = 0; i < size_; i++) {
             construct(data_ + i, it[i]);
@@ -57,18 +61,21 @@ public:
      * @throws bad_alloc or any exception from T's copy constructor
      * */
     vector(const vector<T>& other)
-        : size_(other.size()), capacity_(other.capacity()), data_(allocate(capacity_)) {
+        : size_(other.size()), capacity_(other.capacity()),
+          data_(allocate(capacity_)) {
         for (std::size_t i = 0; i < size_; i++) {
             construct(data_ + i, other[i]);
         }
     }
 
     /*
-     * @brief move constructor moves elements from other vector into this container
+     * @brief move constructor moves elements from other vector into this
+     * container
      * @param other
      * */
     vector(vector<T>&& other)
-        : size_(std::exchange(other.size_, 0)), capacity_(std::exchange(other.capacity_, 0)),
+        : size_(std::exchange(other.size_, 0)),
+          capacity_(std::exchange(other.capacity_, 0)),
           data_(std::exchange(other.data_, nullptr)) {}
 
     /**
@@ -158,7 +165,8 @@ public:
     // TODO: insert, insert_range, emplace, erase, append_range, swap
 
     /**
-     * @brief clears the container of any elements it's storing and size becomes zero
+     * @brief clears the container of any elements it's storing and size becomes
+     * zero
      * */
     void clear() noexcept {
         destroy_range(data_, data_ + size_);
@@ -189,7 +197,8 @@ public:
      * @param args - arguments to construct object T with
      * @throws whatever shift_realloc and shift_insert may throw
      * */
-    template <typename... Args> std::size_t emplace_at(std::size_t pos, Args&&... args) {
+    template <typename... Args>
+    std::size_t emplace_at(std::size_t pos, Args&&... args) {
         // if pos and size same, just construct in-place? with shift insert
         // else we need shift realloc
         if (size_ == capacity_) {
@@ -205,7 +214,9 @@ public:
 
     void resize(std::size_t count) { resize_helper(count); }
 
-    void resize(std::size_t count, const T& value) { resize_helper(count, value); }
+    void resize(std::size_t count, const T& value) {
+        resize_helper(count, value);
+    }
 
     void shrink_to_fit() {
         if (size_ == capacity_)
@@ -224,11 +235,13 @@ private:
      * construct
      * reallocate
      * relocate into
-     * shift_insert - when we need to insert at pos, but things to rhs need shfting
-     * shift_reallocate - similar motive as shift_insert but realloc needed since cap too small
+     * shift_insert - when we need to insert at pos, but things to rhs need
+     * shfting shift_reallocate - similar motive as shift_insert but realloc
+     * needed since cap too small
      */
 
-    template <typename... Args> void resize_helper(std::size_t count, Args&&... args) {
+    template <typename... Args>
+    void resize_helper(std::size_t count, Args&&... args) {
         if (count <= size_) {
             destroy_range(data_ + count, data_ + size_);
             size_ = count;
@@ -282,8 +295,10 @@ private:
 
     /**
      * @brief destroys a range of elements [first, last)
-     * @param first Start of the range, this element is inclusive of the destruction
-     * @param last End of the range, this element is not inclusive of the destruction
+     * @param first Start of the range, this element is inclusive of the
+     * destruction
+     * @param last End of the range, this element is not inclusive of the
+     * destruction
      */
     void destroy_range(T* first, T* last) noexcept {
         while (last != first) {
@@ -292,17 +307,19 @@ private:
     }
 
     /*
-     * @brief constructs an object T in the memory slot by forwarding args into T's constructor
+     * @brief constructs an object T in the memory slot by forwarding args into
+     * T's constructor
      * @param slot - The slot at which T will be constructed
-     * @param args - The arguments to be forwarded to T's constructor for construction in-place
+     * @param args - The arguments to be forwarded to T's constructor for
+     * construction in-place
      * */
     template <typename... Args> void construct(T* slot, Args&&... args) {
         allocator_traits::construct(alloc_, slot, std::forward<Args>(args)...);
     }
 
     /*
-     * @brief allocates a new buffer, moves data from old buffer into new buffer and establishes
-     * this as the class's allocated memory buffer
+     * @brief allocates a new buffer, moves data from old buffer into new buffer
+     * and establishes this as the class's allocated memory buffer
      * @param new_cap - capacity of the newly allocated buffer
      * @throws Whatever allocate throws
      * */
@@ -342,7 +359,8 @@ private:
      * */
     void relocate(T* dest, T* src, std::size_t size) {
         // try move, else destroy and throw
-        // store counter of how many objects built, useful for when we need to know num to destroy
+        // store counter of how many objects built, useful for when we need to
+        // know num to destroy
         std::size_t number_of_relocations = 0;
         try {
             for (std::size_t i = 0; i < size; i++) {
@@ -366,12 +384,13 @@ private:
     }
 
     /*
-     * @brief inserts an object T in-place at a position, shifts existing elements from that
-     * position onwards to make room for the new object T
+     * @brief inserts an object T in-place at a position, shifts existing
+     * elements from that position onwards to make room for the new object T
      * @param pos - position at which object T will be inserted
      * @param args - arguments to construct object T with
      * */
-    template <typename... Args> void shift_insert(std::size_t pos, Args&&... args) {
+    template <typename... Args>
+    void shift_insert(std::size_t pos, Args&&... args) {
         // if size is pos then just insert
         // construct + shift element at position size
         // shift elements one forward
@@ -389,14 +408,15 @@ private:
     }
 
     /*
-     * @brief allocate a new memory, insert an object T into the position and relocate
-     * data from the existing buffer into the newly allocated one. since a new object has
-     * taken up position pos, exisiting elements from position pos and onwards must be
-     * shifted to the memory slot to the right
+     * @brief allocate a new memory, insert an object T into the position and
+     * relocate data from the existing buffer into the newly allocated one.
+     * since a new object has taken up position pos, exisiting elements from
+     * position pos and onwards must be shifted to the memory slot to the right
      * @param pos - The position at which to insert an object T
      * @param args - arguments to construct object T with
      */
-    template <typename... Args> void shift_realloc(std::size_t pos, Args&&... args) {
+    template <typename... Args>
+    void shift_realloc(std::size_t pos, Args&&... args) {
         // alloc new mem
         // construct obj T
         // move stuff on lhs
@@ -431,7 +451,9 @@ private:
         replace_buffer(new_mem, new_cap);
     }
 
-    std::size_t grow_capacity() const noexcept { return capacity_ == 0 ? 1 : capacity_ << 1; }
+    std::size_t grow_capacity() const noexcept {
+        return capacity_ == 0 ? 1 : capacity_ << 1;
+    }
 
     [[no_unique_address]] Allocator alloc_;
     std::size_t size_{0};

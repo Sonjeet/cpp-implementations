@@ -2,6 +2,12 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
+struct Tracked {
+    static inline int live{0};
+    Tracked() { live++; }
+    ~Tracked() { live--; }
+};
+
 TEST(up_test, construct_up) {
     dev::unique_ptr<int> p1;
     EXPECT_EQ(p1.get(), nullptr);
@@ -9,13 +15,22 @@ TEST(up_test, construct_up) {
     dev::unique_ptr<int> p2{new int(10)};
     EXPECT_EQ(*p2.get(), 10);
 }
-
 TEST(up_test, move_constructor) {
     dev::unique_ptr<int> p1{new int{10}};
     EXPECT_EQ(*p1.get(), 10);
     dev::unique_ptr<int> p2{std::move(p1)};
     EXPECT_EQ(p1.get(), nullptr);
     EXPECT_EQ(*p2.get(), 10);
+}
+
+TEST(up_test, move_operation_correctly_freeing_resources) {
+    {
+        dev::unique_ptr<Tracked> a{new Tracked};
+        dev::unique_ptr<Tracked> b{new Tracked};
+        a = std::move(b);
+        EXPECT_EQ(Tracked::live, 1);
+    }
+    EXPECT_EQ(Tracked::live, 0);
 }
 
 TEST(up_test, bool_operator) {

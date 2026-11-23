@@ -1,5 +1,8 @@
+#pragma once
+
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -24,8 +27,8 @@ public:
     using pointer = element_type*;
 
     // constructors
-    explicit unique_ptr() : ptr_(nullptr) {}
-    unique_ptr(pointer ptr) : ptr_(ptr) {}
+    unique_ptr() : ptr_(nullptr) {}
+    explicit unique_ptr(pointer ptr) : ptr_(ptr) {}
     unique_ptr(unique_ptr&& ptr)
         : ptr_(std::exchange(ptr.ptr_, nullptr)),
           deleter_(std::forward<Deleter>(ptr.deleter_)) {}
@@ -39,13 +42,15 @@ public:
     ~unique_ptr() { reset(nullptr); }
 
     // asignment operators
-    // TODO: =(nullptr)
+    unique_ptr& operator=(std::nullptr_t) noexcept {
+        reset(nullptr);
+        return *this;
+    }
+
     unique_ptr& operator=(unique_ptr&& other) noexcept {
         if (this == &other)
             return *this;
-        // delete old state, probz call reset?
-
-        ptr_ = std::exchange(other.ptr_, nullptr);
+        reset(other.release());
         deleter_ = std::forward<Deleter>(other.deleter_);
 
         return *this;
@@ -66,13 +71,17 @@ public:
     }
 
     std::add_lvalue_reference_t<element_type> operator*() const
-        noexcept(noexcept(*std::declval<pointer>))
+        noexcept(noexcept(*std::declval<pointer>()))
         requires is_single_object<T>
     {
         return *ptr_;
     }
 
-    element_type& operator[](std::size_t i) const { return get()[i]; }
+    element_type& operator[](std::size_t i) const
+        requires is_unbounded_array<T>
+    {
+        return get()[i];
+    }
     // modifiers
     void reset(pointer ptr = pointer()) noexcept
         requires is_single_object<T>
@@ -83,7 +92,7 @@ public:
     template <typename U>
     void reset(U ptr) noexcept
         requires is_unbounded_array<T> && std::is_pointer_v<U> &&
-                 is_convertible<element_type, std::remove_pointer_t<U>>
+                 is_convertible<std::remove_pointer_t<U>, element_type>
     {
         reset_helper(ptr);
     }
